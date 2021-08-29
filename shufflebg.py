@@ -1,26 +1,6 @@
 from PIL import Image
-import numpy
-import random
-import os
-
-def save(image, name, outdir):
-    dirs = os.listdir()
-    actual_dir = os.getcwd()
-
-    dir_exists = False
-    for i in range(len(dirs)):
-        if dirs[i] == outdir:
-            dir_exists = True
-
-    if not dir_exists:
-        os.mkdir(outdir)
-    
-    try:
-        image.save(f'{actual_dir}/{outdir}/{name}.png')
-        return True
-    except:
-        return False
-
+import numpy, random
+from save import save
 
 def generate_bg(input_image):
     array_image = numpy.array(input_image)
@@ -33,27 +13,31 @@ def generate_bg(input_image):
 
     bg = Image.fromarray(array_image)
 
-    return save(bg, 'bg', 'metadata')
+    return bg
     
-def generate_img(name_image):
-    input_image = Image.open(f'./input/{name_image}')
-    bg_pxl = input_image.getpixel((0, 0))
+def generate_img(name_image, number_image, extension):
+    image = Image.open(f'./input/{name_image}')
+    bg_pxl = image.getpixel((0, 0))
 
-    if not generate_bg(input_image):
-        print('Error!')
-    
-    bg_image = Image.open('./metadata/bg.png')
-    for x in range(input_image.size[0]):
-        for y in range(input_image.size[1]):
-            if input_image.getpixel((x, y)) == bg_pxl:
-                input_image.putpixel((x, y), bg_image.getpixel((x, y)))
+    bg = generate_bg(image)
+
+    for x in range(image.size[0]):
+        for y in range(image.size[1]):
+            if image.getpixel((x, y)) == bg_pxl:
+                image.putpixel((x, y), bg.getpixel((x, y)))
         
-    image_save = save(input_image, 'processed_image', 'output')
-    if image_save: print('Sucess!')
-    else: print('Error!')
+    return save(image, 'metadata', f'image_{number_image}', extension)
+
+def generate_gif(name_image, extension='png', fps=30):
+    images = []
+    for i in range(fps):
+        generate_img(name_image, f'{i:0>3}', extension)
+        images.append(Image.open(f'./metadata/image_{i:0>3}.{extension}'))
+        
+    save(images, 'output', 'shuffle', 'gif', images=images)
 
 def main():
-    name_image = input('Type a image name in a `input` folder and her extension: ')
-    generate_img(name_image)    
+    name_image = 'test1.png'
+    generate_gif(name_image)
 
 main()
